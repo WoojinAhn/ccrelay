@@ -1,0 +1,19 @@
+# Credentials & secrets
+*.enc
+*.key
+credentials.json
+client_secret*.json
+token*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Claude notes
+.claude/notes.md
