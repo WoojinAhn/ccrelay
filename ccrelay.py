@@ -200,6 +200,7 @@ def drive_list_files(parent_id: str) -> list[dict]:
     params = json.dumps({
         "q": f'"{parent_id}" in parents',
         "pageSize": 100,
+        "fields": "files(id,name,size,modifiedTime,mimeType)",
     })
     result = gws_run(["drive", "files", "list", "--params", params])
     return result.get("files", [])
@@ -602,7 +603,7 @@ def _print_sessions(project_name: str, sessions: list[dict]) -> None:
     for i, s in enumerate(sessions, 1):
         name = s.get("name", "unknown")
         size = _format_size(s.get("size", "0"))
-        time = _format_time(s.get("createdTime", ""))
+        time = _format_time(s.get("modifiedTime", ""))
         print(f"  {i}. {name}  ({size}, {time})")
 
 
