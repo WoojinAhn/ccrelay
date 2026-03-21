@@ -204,15 +204,10 @@ class TestCmdPush(unittest.TestCase):
 
     @patch("ccrelay.check_gws_available", return_value=False)
     def test_gws_not_available_exits(self, mock_check):
-        """cmd_push exits early if gws is not available."""
-        with patch("builtins.print") as mock_print:
-            cmd_push(self._make_args())
-            mock_print.assert_called()
-            output = " ".join(str(c) for c in mock_print.call_args_list)
-            self.assertTrue(
-                "gws" in output.lower() or "auth" in output.lower(),
-                f"Expected error about gws, got: {output}",
-            )
+        """cmd_push exits with SystemExit if gws is not available."""
+        with patch("builtins.print"):
+            with self.assertRaises(SystemExit):
+                cmd_push(self._make_args())
 
     @patch("ccrelay.check_gws_available", return_value=True)
     @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")

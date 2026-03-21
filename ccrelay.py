@@ -348,29 +348,50 @@ def build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="ccrelay",
-        description="Selectively relay Claude Code sessions between machines.",
+        description="Selectively relay Claude Code sessions between machines via Google Drive.",
     )
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", title="commands")
 
-    for name in ("push", "pull", "list"):
-        sub = subparsers.add_parser(name)
-        sub.add_argument("--project", default=None, help="Project name or suffix to match")
+    help_texts = {
+        "push": "Push a local session to Google Drive",
+        "pull": "Pull a session from Google Drive to local",
+        "list": "List sessions on Google Drive",
+    }
+    project_help = (
+        "Project name or path suffix to match "
+        "(e.g., 'ccrelay' matches '-Users-woojin-home-ccrelay'). "
+        "Defaults to current working directory."
+    )
+
+    for name, help_text in help_texts.items():
+        sub = subparsers.add_parser(name, help=help_text)
+        sub.add_argument("--project", default=None, help=project_help)
 
     return parser
+
+
+def _print_gws_error():
+    """Print standardized gws CLI error message."""
+    print("Error: gws CLI is not available or not authenticated.", file=sys.stderr)
+    print("Install: brew install googleworkspace-cli", file=sys.stderr)
+    print("Authenticate: gws auth setup --login", file=sys.stderr)
 
 
 def cmd_push(args):
     """Push a session to Google Drive."""
     if not check_gws_available():
-        print("Error: gws CLI is not available or not authenticated.")
-        print("Install gws and run 'gws auth login' first.")
-        return
+        _print_gws_error()
+        sys.exit(1)
 
-    project_path = resolve_project_path(args.project)
+    try:
+        project_path = resolve_project_path(args.project)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     sessions = list_local_sessions(project_path)
     if not sessions:
-        print(f"No sessions found for project: {project_path}")
+        print(f"No local sessions found for project: {project_path}")
         return
 
     print(f"Sessions for {project_path}:\n")
@@ -385,10 +406,10 @@ def cmd_push(args):
     try:
         idx = int(choice) - 1
         if idx < 0 or idx >= len(sessions):
-            print("Invalid selection.")
+            print(f"Error: Please enter a number between 1 and {len(sessions)}.", file=sys.stderr)
             return
     except ValueError:
-        print("Invalid selection.")
+        print(f"Error: '{choice}' is not a valid number.", file=sys.stderr)
         return
 
     selected = sessions[idx]
@@ -419,6 +440,9 @@ def cmd_push(args):
             drive_upload(tar_path, tar_name, proj_folder_id)
             print(f"\nUploaded session to Drive: {tar_name}")
 
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
     finally:
         os.remove(tar_path)
 
@@ -429,25 +453,40 @@ def cmd_pull(args):
 
     # 1. Check gws available
     if not check_gws_available():
-        print("Error: gws CLI is not installed or not authenticated.")
-        print("Install gws and run 'gws auth login' first.")
+        _print_gws_error()
         sys.exit(1)
 
     # 2. Resolve project path
-    project_path = resolve_project_path(args.project)
+    try:
+        project_path = resolve_project_path(args.project)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # 3. Load config for root folder ID
-    config = load_config()
-    root_folder_id = ensure_drive_root(config)
+    try:
+        config = load_config()
+        root_folder_id = ensure_drive_root(config)
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # 4. Find project folder on Drive
-    folder_id = drive_find_folder(project_path, parent_id=root_folder_id)
+    try:
+        folder_id = drive_find_folder(project_path, parent_id=root_folder_id)
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
     if not folder_id:
         print(f"No project folder '{project_path}' found on Drive.")
         return
 
     # 5. List sessions
-    files = drive_list_files(folder_id)
+    try:
+        files = drive_list_files(folder_id)
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
     if not files:
         print("No sessions found on Drive for this project.")
         return
@@ -469,9 +508,10 @@ def cmd_pull(args):
     try:
         idx = int(selection) - 1
         if idx < 0 or idx >= len(files):
-            raise ValueError
+            print(f"Error: Please enter a number between 1 and {len(files)}.", file=sys.stderr)
+            return
     except ValueError:
-        print("Invalid selection.")
+        print(f"Error: '{selection}' is not a valid number.", file=sys.stderr)
         return
 
     selected = files[idx]
@@ -515,6 +555,9 @@ def cmd_pull(args):
         print(f"\nSession {extracted_uuid} pulled.")
         print(f"Use 'claude --resume {extracted_uuid}' to continue.")
 
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
     finally:
         # 12. Clean up temp files
         _shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -558,41 +601,49 @@ def _print_sessions(project_name: str, sessions: list[dict]) -> None:
 def cmd_list(args):
     """List sessions on Google Drive."""
     if not check_gws_available():
-        print("Error: gws CLI is not available or not authenticated.", file=sys.stderr)
+        _print_gws_error()
         sys.exit(1)
 
-    config = load_config()
-    root_id = ensure_drive_root(config)
+    try:
+        config = load_config()
+        root_id = ensure_drive_root(config)
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    if args.project:
-        # List sessions for a specific project
-        project_folder_id = drive_find_folder(args.project, root_id)
-        if not project_folder_id:
-            print("No sessions found on Drive.")
-            return
-        sessions = drive_list_files(project_folder_id)
-        if not sessions:
-            print("No sessions found on Drive.")
-            return
-        _print_sessions(args.project, sessions)
-    else:
-        # List all project folders and their sessions
-        folders = drive_list_files(root_id)
-        project_folders = [
-            f for f in folders
-            if f.get("mimeType") == "application/vnd.google-apps.folder"
-        ]
-        if not project_folders:
-            print("No sessions found on Drive.")
-            return
-        found_any = False
-        for folder in project_folders:
-            sessions = drive_list_files(folder["id"])
-            _print_sessions(folder["name"], sessions)
-            if sessions:
-                found_any = True
-        if not found_any:
-            print("\nNo sessions found on Drive.")
+    try:
+        if args.project:
+            # List sessions for a specific project
+            project_folder_id = drive_find_folder(args.project, root_id)
+            if not project_folder_id:
+                print("No sessions found on Drive.")
+                return
+            sessions = drive_list_files(project_folder_id)
+            if not sessions:
+                print("No sessions found on Drive.")
+                return
+            _print_sessions(args.project, sessions)
+        else:
+            # List all project folders and their sessions
+            folders = drive_list_files(root_id)
+            project_folders = [
+                f for f in folders
+                if f.get("mimeType") == "application/vnd.google-apps.folder"
+            ]
+            if not project_folders:
+                print("No sessions found on Drive.")
+                return
+            found_any = False
+            for folder in project_folders:
+                sessions = drive_list_files(folder["id"])
+                _print_sessions(folder["name"], sessions)
+                if sessions:
+                    found_any = True
+            if not found_any:
+                print("\nNo sessions found on Drive.")
+    except RuntimeError as e:
+        print(f"Error: Drive operation failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
