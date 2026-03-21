@@ -121,17 +121,19 @@ def check_gws_available() -> bool:
         return False
 
 
-def gws_run(args: list[str]) -> dict:
+def gws_run(args: list[str], cwd: str | None = None) -> dict:
     """Run a gws command and return parsed JSON response.
     Full command: ['gws'] + args
     Captures stdout, parses as JSON.
     Raises RuntimeError with stderr on non-zero exit code.
     Raises RuntimeError on invalid JSON.
+    cwd: working directory for the subprocess (needed for --upload).
     """
     result = subprocess.run(
         ["gws"] + args,
         capture_output=True,
         text=True,
+        cwd=cwd,
     )
     if result.returncode != 0:
         raise RuntimeError(result.stderr)
@@ -154,6 +156,9 @@ def drive_create_folder(name: str, parent_id: str) -> str:
 
 def drive_upload(file_path: str, name: str, parent_id: str) -> str:
     """Upload a file to Drive. Returns file ID."""
+    abs_path = os.path.abspath(file_path)
+    file_dir = os.path.dirname(abs_path)
+    file_name = os.path.basename(abs_path)
     metadata = json.dumps({
         "name": name,
         "parents": [parent_id],
@@ -161,19 +166,22 @@ def drive_upload(file_path: str, name: str, parent_id: str) -> str:
     result = gws_run([
         "drive", "files", "create",
         "--json", metadata,
-        "--upload", file_path,
-    ])
+        "--upload", file_name,
+    ], cwd=file_dir)
     return result["id"]
 
 
 def drive_update(file_id: str, file_path: str) -> str:
     """Update an existing file on Drive. Returns file ID."""
+    abs_path = os.path.abspath(file_path)
+    file_dir = os.path.dirname(abs_path)
+    file_name = os.path.basename(abs_path)
     params = json.dumps({"fileId": file_id})
     result = gws_run([
         "drive", "files", "update",
         "--params", params,
-        "--upload", file_path,
-    ])
+        "--upload", file_name,
+    ], cwd=file_dir)
     return result["id"]
 
 

@@ -63,6 +63,7 @@ class TestGwsRun(unittest.TestCase):
             ["gws", "drive", "files", "list"],
             capture_output=True,
             text=True,
+            cwd=None,
         )
 
     @patch("ccrelay.subprocess.run")
@@ -122,9 +123,11 @@ class TestDriveUpload(unittest.TestCase):
         metadata = json.loads(args[json_idx + 1])
         self.assertEqual(metadata["name"], "test.tar.gz")
         self.assertIn("parent_123", metadata["parents"])
-        # Verify --upload flag
+        # Verify --upload flag uses basename
         upload_idx = args.index("--upload")
-        self.assertEqual(args[upload_idx + 1], "/tmp/test.tar.gz")
+        self.assertEqual(args[upload_idx + 1], "test.tar.gz")
+        # Verify cwd is set to file's directory
+        self.assertEqual(mock_gws_run.call_args[1].get("cwd"), "/tmp")
 
 
 class TestDriveUpdate(unittest.TestCase):
@@ -143,9 +146,11 @@ class TestDriveUpdate(unittest.TestCase):
         params_idx = args.index("--params")
         params = json.loads(args[params_idx + 1])
         self.assertEqual(params["fileId"], "file_xyz")
-        # Verify --upload flag
+        # Verify --upload flag uses basename
         upload_idx = args.index("--upload")
-        self.assertEqual(args[upload_idx + 1], "/tmp/updated.tar.gz")
+        self.assertEqual(args[upload_idx + 1], "updated.tar.gz")
+        # Verify cwd is set to file's directory
+        self.assertEqual(mock_gws_run.call_args[1].get("cwd"), "/tmp")
 
 
 class TestDriveDownload(unittest.TestCase):
