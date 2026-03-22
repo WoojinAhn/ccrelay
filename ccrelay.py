@@ -187,12 +187,15 @@ def drive_update(file_id: str, file_path: str) -> str:
 
 def drive_download(file_id: str, output_path: str) -> None:
     """Download a file from Drive to local path."""
+    abs_path = os.path.abspath(output_path)
+    file_dir = os.path.dirname(abs_path)
+    file_name = os.path.basename(abs_path)
     params = json.dumps({"fileId": file_id, "alt": "media"})
     gws_run([
         "drive", "files", "get",
         "--params", params,
-        "--output", output_path,
-    ])
+        "--output", file_name,
+    ], cwd=file_dir)
 
 
 def drive_list_files(parent_id: str) -> list[dict]:

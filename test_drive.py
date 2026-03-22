@@ -169,9 +169,11 @@ class TestDriveDownload(unittest.TestCase):
         params = json.loads(args[params_idx + 1])
         self.assertEqual(params["fileId"], "file_xyz")
         self.assertEqual(params["alt"], "media")
-        # Verify --output flag
+        # Verify --output flag uses basename
         output_idx = args.index("--output")
-        self.assertEqual(args[output_idx + 1], "/tmp/output.tar.gz")
+        self.assertEqual(args[output_idx + 1], "output.tar.gz")
+        # Verify cwd is set to file's directory
+        self.assertEqual(mock_gws_run.call_args[1].get("cwd"), "/tmp")
 
 
 class TestDriveListFiles(unittest.TestCase):
