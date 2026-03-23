@@ -225,6 +225,55 @@ def drive_find_folder(name: str, parent_id: str | None = None) -> str | None:
 # === Session Operations ===
 
 
+def extract_session_label(jsonl_path: str, max_len: int = 60) -> str | None:
+    """Extract a human-readable label from a session JSONL file.
+
+    Priority:
+      1. custom-title message (set via claude --name)
+      2. First user message text
+    Returns None if neither found. Truncates to max_len.
+    """
+    custom_title = None
+    first_user_msg = None
+
+    try:
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                msg_type = obj.get("type")
+
+                if msg_type == "custom-title":
+                    custom_title = obj.get("customTitle")
+                    break  # highest priority, stop early
+
+                if msg_type == "user" and first_user_msg is None:
+                    content = obj.get("message", {}).get("content", obj.get("content"))
+                    if isinstance(content, list):
+                        for c in content:
+                            if isinstance(c, dict) and c.get("type") == "text":
+                                first_user_msg = c["text"]
+                                break
+                    elif isinstance(content, str):
+                        first_user_msg = content
+    except (OSError, UnicodeDecodeError):
+        return None
+
+    label = custom_title or first_user_msg
+    if label is None:
+        return None
+    label = label.replace("\n", " ").strip()
+    if len(label) > max_len:
+        label = label[:max_len] + "..."
+    return label
+
+
 def list_local_sessions(project_path: str, claude_dir: Path = DEFAULT_CLAUDE_DIR) -> list[dict]:
     """List local sessions for a project.
     Scans claude_dir/projects/{project_path}/ for *.jsonl files.
@@ -251,11 +300,14 @@ def list_local_sessions(project_path: str, claude_dir: Path = DEFAULT_CLAUDE_DIR
                 if child.is_file():
                     size += child.stat().st_size
 
+        label = extract_session_label(str(f))
+
         sessions.append({
             "uuid": uuid,
             "path": str(f),
             "size": size,
             "mtime": datetime.fromtimestamp(f.stat().st_mtime),
+            "label": label,
         })
 
     sessions.sort(key=lambda s: s["mtime"], reverse=True)
@@ -410,7 +462,10 @@ def cmd_push(args):
     for i, s in enumerate(sessions, 1):
         size_kb = s["size"] / 1024
         mtime_str = s["mtime"].strftime("%Y-%m-%d %H:%M:%S")
+        label = s.get("label")
         print(f"  [{i}] {s['uuid']}")
+        if label:
+            print(f"      \"{label}\"")
         print(f"      {size_kb:.1f} KB  |  {mtime_str}")
 
     print()

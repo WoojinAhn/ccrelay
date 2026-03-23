@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, call, patch
 from ccrelay import (
     bundle_session,
     cmd_push,
+    extract_session_label,
     list_local_sessions,
 )
 
@@ -106,6 +107,71 @@ class TestListLocalSessions(unittest.TestCase):
 
         self.assertEqual(len(sessions), 1)
         self.assertEqual(sessions[0]["uuid"], "abc-123")
+
+
+class TestExtractSessionLabel(unittest.TestCase):
+    """Tests for extract_session_label()."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def _write_jsonl(self, filename, lines):
+        path = os.path.join(self.tmp, filename)
+        with open(path, "w") as f:
+            for line in lines:
+                f.write(json.dumps(line) + "\n")
+        return path
+
+    def test_custom_title_takes_priority(self):
+        """custom-title message should be returned as label."""
+        path = self._write_jsonl("session.jsonl", [
+            {"type": "user", "message": {"content": [{"type": "text", "text": "first msg"}]}},
+            {"type": "custom-title", "customTitle": "My Session Name"},
+        ])
+        self.assertEqual(extract_session_label(path), "My Session Name")
+
+    def test_first_user_message_fallback(self):
+        """When no custom-title, use first user message."""
+        path = self._write_jsonl("session.jsonl", [
+            {"type": "progress", "data": {}},
+            {"type": "user", "message": {"content": [{"type": "text", "text": "이슈 12번 개발"}]}},
+            {"type": "user", "message": {"content": [{"type": "text", "text": "두번째 메시지"}]}},
+        ])
+        self.assertEqual(extract_session_label(path), "이슈 12번 개발")
+
+    def test_long_message_truncated(self):
+        """Long first message should be truncated."""
+        long_msg = "A" * 200
+        path = self._write_jsonl("session.jsonl", [
+            {"type": "user", "message": {"content": [{"type": "text", "text": long_msg}]}},
+        ])
+        label = extract_session_label(path)
+        self.assertLessEqual(len(label), 63)  # 60 + "..."
+
+    def test_no_useful_content_returns_none(self):
+        """If no custom-title and no user message, return None."""
+        path = self._write_jsonl("session.jsonl", [
+            {"type": "progress", "data": {}},
+            {"type": "progress", "data": {}},
+        ])
+        self.assertIsNone(extract_session_label(path))
+
+    def test_empty_file_returns_none(self):
+        """Empty file returns None."""
+        path = os.path.join(self.tmp, "empty.jsonl")
+        with open(path, "w") as f:
+            pass
+        self.assertIsNone(extract_session_label(path))
+
+    def test_user_message_string_content(self):
+        """Handle user message with plain string content."""
+        path = self._write_jsonl("session.jsonl", [
+            {"type": "user", "content": "plain string message"},
+        ])
+        self.assertEqual(extract_session_label(path), "plain string message")
 
 
 class TestBundleSession(unittest.TestCase):
