@@ -103,4 +103,4 @@ Auto-created on first run.
 python3 -m unittest discover -v
 ```
 
-108 tests (unit + e2e).
+120 tests (unit + e2e).
