@@ -49,7 +49,7 @@ class TestResolveProjectPath(unittest.TestCase):
 
     def test_no_arg_uses_cwd(self):
         """No --project arg: use cwd_to_project_path(os.getcwd())."""
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"):
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"):
             result = resolve_project_path(None, claude_dir=self.claude_dir)
         self.assertEqual(result, "-Users-woojin-home-ccrelay")
 
@@ -128,21 +128,21 @@ class TestMain(unittest.TestCase):
     def test_dispatch_push(self):
         """'push' subcommand dispatches to cmd_push."""
         with patch("sys.argv", ["ccrelay", "push"]):
-            with patch("ccrelay.cmd_push") as mock_push:
+            with patch("ccrelay.cli.cmd_push") as mock_push:
                 main()
                 mock_push.assert_called_once()
 
     def test_dispatch_pull(self):
         """'pull' subcommand dispatches to cmd_pull."""
         with patch("sys.argv", ["ccrelay", "pull"]):
-            with patch("ccrelay.cmd_pull") as mock_pull:
+            with patch("ccrelay.cli.cmd_pull") as mock_pull:
                 main()
                 mock_pull.assert_called_once()
 
     def test_dispatch_list(self):
         """'list' subcommand dispatches to cmd_list."""
         with patch("sys.argv", ["ccrelay", "list"]):
-            with patch("ccrelay.cmd_list") as mock_list:
+            with patch("ccrelay.cli.cmd_list") as mock_list:
                 main()
                 mock_list.assert_called_once()
 

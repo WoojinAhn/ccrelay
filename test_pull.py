@@ -166,22 +166,22 @@ class TestCmdPull(unittest.TestCase):
         args.project = project
         return args
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available(self, mock_gws):
         """Should print error and exit when gws is not available."""
         args = self._make_args()
         with self.assertRaises(SystemExit):
             cmd_pull(args)
 
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.restore_session", return_value="abc12345")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.load_config", return_value={"drive_folder_id": "root_123"})
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.restore_session", return_value="abc12345")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={"drive_folder_id": "root_123"})
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_no_sessions_on_drive(self, mock_gws, mock_resolve, mock_load,
                                    mock_ensure, mock_find, mock_list,
                                    mock_download, mock_restore, mock_index):
@@ -193,16 +193,16 @@ class TestCmdPull(unittest.TestCase):
         # Verify appropriate message printed
         mock_print.assert_any_call("No sessions found on Drive for this project.")
 
-    @patch("ccrelay.DEFAULT_CLAUDE_DIR")
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.load_config", return_value={"drive_folder_id": "root_123"})
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.DEFAULT_CLAUDE_DIR")
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={"drive_folder_id": "root_123"})
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_full_flow(self, mock_gws, mock_resolve, mock_load, mock_ensure,
                        mock_find, mock_list, mock_download, mock_restore,
                        mock_index, mock_claude_dir):
@@ -232,15 +232,15 @@ class TestCmdPull(unittest.TestCase):
         mock_restore.assert_called_once()
         mock_index.assert_called_once()
 
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.load_config", return_value={"drive_folder_id": "root_123"})
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={"drive_folder_id": "root_123"})
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_conflict_local_newer_skip(self, mock_gws, mock_resolve, mock_load,
                                         mock_ensure, mock_find, mock_list,
                                         mock_download, mock_restore, mock_index):
@@ -265,22 +265,22 @@ class TestCmdPull(unittest.TestCase):
         os.utime(local_file, (march_21_ts, march_21_ts))
 
         args = self._make_args(project="ccrelay")
-        with patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir):
+        with patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir):
             with patch("builtins.input", side_effect=["1", "N"]):
                 with patch("builtins.print"):
                     cmd_pull(args)
 
         mock_restore.assert_not_called()
 
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.load_config", return_value={"drive_folder_id": "root_123"})
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.restore_session", return_value="abc12345-1234-1234-1234-123456789abc")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={"drive_folder_id": "root_123"})
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_conflict_drive_newer_overwrites(self, mock_gws, mock_resolve, mock_load,
                                               mock_ensure, mock_find, mock_list,
                                               mock_download, mock_restore, mock_index):
@@ -305,7 +305,7 @@ class TestCmdPull(unittest.TestCase):
         os.utime(local_file, (march_20_ts, march_20_ts))
 
         args = self._make_args(project="ccrelay")
-        with patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir):
+        with patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir):
             # Only one input call — session selection, no overwrite prompt
             with patch("builtins.input", return_value="1") as mock_input:
                 with patch("builtins.print"):

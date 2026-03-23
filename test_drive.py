@@ -20,7 +20,7 @@ from ccrelay import (
 class TestCheckGwsAvailable(unittest.TestCase):
     """Tests for check_gws_available()."""
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_authenticated(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -33,7 +33,7 @@ class TestCheckGwsAvailable(unittest.TestCase):
             text=True,
         )
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_not_authenticated(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -41,7 +41,7 @@ class TestCheckGwsAvailable(unittest.TestCase):
         )
         self.assertFalse(check_gws_available())
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_gws_not_installed(self, mock_run):
         mock_run.side_effect = FileNotFoundError("gws not found")
         self.assertFalse(check_gws_available())
@@ -50,7 +50,7 @@ class TestCheckGwsAvailable(unittest.TestCase):
 class TestGwsRun(unittest.TestCase):
     """Tests for gws_run()."""
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_success_valid_json(self, mock_run):
         expected = {"id": "file123", "name": "test.txt"}
         mock_run.return_value = MagicMock(
@@ -66,7 +66,7 @@ class TestGwsRun(unittest.TestCase):
             cwd=None,
         )
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_nonzero_exit_raises(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=1,
@@ -76,7 +76,7 @@ class TestGwsRun(unittest.TestCase):
             gws_run(["drive", "files", "list"])
         self.assertIn("something went wrong", str(ctx.exception))
 
-    @patch("ccrelay.subprocess.run")
+    @patch("ccrelay.drive.subprocess.run")
     def test_invalid_json_raises(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -89,7 +89,7 @@ class TestGwsRun(unittest.TestCase):
 class TestDriveCreateFolder(unittest.TestCase):
     """Tests for drive_create_folder()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_creates_folder_returns_id(self, mock_gws_run):
         mock_gws_run.return_value = {"id": "folder_abc"}
         result = drive_create_folder("MyFolder", "parent_123")
@@ -109,7 +109,7 @@ class TestDriveCreateFolder(unittest.TestCase):
 class TestDriveUpload(unittest.TestCase):
     """Tests for drive_upload()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_uploads_file_returns_id(self, mock_gws_run):
         mock_gws_run.return_value = {"id": "file_xyz"}
         result = drive_upload("/tmp/test.tar.gz", "test.tar.gz", "parent_123")
@@ -133,7 +133,7 @@ class TestDriveUpload(unittest.TestCase):
 class TestDriveUpdate(unittest.TestCase):
     """Tests for drive_update()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_updates_file_returns_id(self, mock_gws_run):
         mock_gws_run.return_value = {"id": "file_xyz"}
         result = drive_update("file_xyz", "/tmp/updated.tar.gz")
@@ -156,7 +156,7 @@ class TestDriveUpdate(unittest.TestCase):
 class TestDriveDownload(unittest.TestCase):
     """Tests for drive_download()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_downloads_file(self, mock_gws_run):
         mock_gws_run.return_value = {}
         drive_download("file_xyz", "/tmp/output.tar.gz")
@@ -179,7 +179,7 @@ class TestDriveDownload(unittest.TestCase):
 class TestDriveListFiles(unittest.TestCase):
     """Tests for drive_list_files()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_returns_files_array(self, mock_gws_run):
         mock_gws_run.return_value = {
             "files": [
@@ -199,7 +199,7 @@ class TestDriveListFiles(unittest.TestCase):
         self.assertIn('"parent_123" in parents', params["q"])
         self.assertEqual(params["pageSize"], 100)
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_empty_list(self, mock_gws_run):
         mock_gws_run.return_value = {"files": []}
         result = drive_list_files("parent_123")
@@ -209,7 +209,7 @@ class TestDriveListFiles(unittest.TestCase):
 class TestDriveFindFolder(unittest.TestCase):
     """Tests for drive_find_folder()."""
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_found_returns_id(self, mock_gws_run):
         mock_gws_run.return_value = {
             "files": [{"id": "folder_abc", "name": "ccrelay"}]
@@ -223,13 +223,13 @@ class TestDriveFindFolder(unittest.TestCase):
         self.assertIn("name='ccrelay'", params["q"])
         self.assertIn("mimeType='application/vnd.google-apps.folder'", params["q"])
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_not_found_returns_none(self, mock_gws_run):
         mock_gws_run.return_value = {"files": []}
         result = drive_find_folder("nonexistent")
         self.assertIsNone(result)
 
-    @patch("ccrelay.gws_run")
+    @patch("ccrelay.drive.gws_run")
     def test_with_parent_id(self, mock_gws_run):
         mock_gws_run.return_value = {
             "files": [{"id": "folder_abc", "name": "sessions"}]

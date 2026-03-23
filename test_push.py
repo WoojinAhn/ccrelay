@@ -268,16 +268,16 @@ class TestCmdPush(unittest.TestCase):
     def _make_args(self, project=None):
         return Namespace(command="push", project=project)
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available_exits(self, mock_check):
         """cmd_push exits with SystemExit if gws is not available."""
         with patch("builtins.print"):
             with self.assertRaises(SystemExit):
                 cmd_push(self._make_args())
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.list_local_sessions", return_value=[])
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.list_local_sessions", return_value=[])
     def test_no_sessions_prints_message(self, mock_list, mock_resolve, mock_check):
         """cmd_push prints message and returns if no sessions found."""
         with patch("builtins.print") as mock_print:
@@ -288,15 +288,15 @@ class TestCmdPush(unittest.TestCase):
                 f"Expected message about no sessions, got: {output}",
             )
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.list_local_sessions")
-    @patch("ccrelay.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.drive_find_folder", return_value=None)
-    @patch("ccrelay.drive_create_folder", return_value="proj_folder_456")
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.drive_upload", return_value="uploaded_file_789")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.list_local_sessions")
+    @patch("ccrelay.cli.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.drive_find_folder", return_value=None)
+    @patch("ccrelay.cli.drive_create_folder", return_value="proj_folder_456")
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.drive_upload", return_value="uploaded_file_789")
     @patch("builtins.input", return_value="1")
     @patch("os.remove")
     def test_full_push_flow_new_upload(
@@ -340,14 +340,14 @@ class TestCmdPush(unittest.TestCase):
         )
         mock_remove.assert_called_once_with("/tmp/abc-123_2026-03-22.tar.gz")
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.list_local_sessions")
-    @patch("ccrelay.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.drive_find_folder", return_value="existing_proj_folder")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_update", return_value="updated_file_789")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.list_local_sessions")
+    @patch("ccrelay.cli.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.drive_find_folder", return_value="existing_proj_folder")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_update", return_value="updated_file_789")
     @patch("builtins.input", return_value="1")
     @patch("os.remove")
     def test_re_push_updates_existing_file(
@@ -382,14 +382,14 @@ class TestCmdPush(unittest.TestCase):
         mock_update.assert_called_once_with("old_file_id", "/tmp/abc-123_2026-03-22.tar.gz")
         mock_remove.assert_called_once_with("/tmp/abc-123_2026-03-22.tar.gz")
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.list_local_sessions")
-    @patch("ccrelay.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
-    @patch("ccrelay.ensure_drive_root", return_value="root_123")
-    @patch("ccrelay.drive_find_folder", return_value="existing_proj_folder")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_upload", return_value="uploaded_file_789")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.list_local_sessions")
+    @patch("ccrelay.cli.bundle_session", return_value="/tmp/abc-123_2026-03-22.tar.gz")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.drive_find_folder", return_value="existing_proj_folder")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_upload", return_value="uploaded_file_789")
     @patch("builtins.input", return_value="1")
     @patch("os.remove")
     def test_no_matching_uuid_on_drive_uploads_new(

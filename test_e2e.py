@@ -49,13 +49,13 @@ class E2EPushTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
-    @patch("ccrelay.drive_upload", return_value="uploaded_file_id")
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.drive_create_folder", return_value="proj_folder_id")
-    @patch("ccrelay.drive_find_folder", return_value=None)
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_upload", return_value="uploaded_file_id")
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.drive_create_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.drive_find_folder", return_value=None)
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="1")
     def test_push_full_flow(
         self, mock_input, mock_gws, mock_config, mock_root,
@@ -63,10 +63,10 @@ class E2EPushTest(unittest.TestCase):
     ):
         """Full push: scan sessions, select, bundle, upload, clean temp."""
         args = Namespace(command="push", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions") as mock_scan, \
-             patch("ccrelay.bundle_session") as mock_bundle, \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions") as mock_scan, \
+             patch("ccrelay.cli.bundle_session") as mock_bundle, \
              patch("builtins.print"):
 
             mock_scan.return_value = [
@@ -95,12 +95,12 @@ class E2EPushTest(unittest.TestCase):
         # Verify project folder was created
         mock_create.assert_called_once_with(self.project_path, "root_id")
 
-    @patch("ccrelay.drive_update", return_value="updated_file_id")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="existing_proj_folder")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_update", return_value="updated_file_id")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="existing_proj_folder")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="1")
     def test_push_updates_existing(
         self, mock_input, mock_gws, mock_config, mock_root,
@@ -116,10 +116,10 @@ class E2EPushTest(unittest.TestCase):
         with open(tar_path, "w") as f:
             f.write("fake tar")
 
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions") as mock_scan, \
-             patch("ccrelay.bundle_session", return_value=tar_path), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions") as mock_scan, \
+             patch("ccrelay.cli.bundle_session", return_value=tar_path), \
              patch("builtins.print"):
             mock_scan.return_value = [
                 {
@@ -159,14 +159,14 @@ class E2EPullTest(unittest.TestCase):
             tf.addfile(info, io.BytesIO(content))
         return buf.getvalue()
 
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.restore_session")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.restore_session")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="1")
     def test_pull_full_flow(
         self, mock_input, mock_gws, mock_config, mock_root,
@@ -194,8 +194,8 @@ class E2EPullTest(unittest.TestCase):
         mock_download.side_effect = fake_download
 
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
              patch("builtins.print") as mock_print:
             cmd_pull(args)
 
@@ -213,13 +213,13 @@ class E2EPullTest(unittest.TestCase):
         self.assertIn(self.uuid, printed)
         self.assertIn("claude --resume", printed)
 
-    @patch("ccrelay.create_session_index")
-    @patch("ccrelay.drive_download")
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_folder_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.create_session_index")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="1")
     def test_pull_temp_cleaned_up(
         self, mock_input, mock_gws, mock_config, mock_root,
@@ -247,8 +247,8 @@ class E2EPullTest(unittest.TestCase):
         mock_download.side_effect = fake_download
 
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
              patch("builtins.print"):
             cmd_pull(args)
 
@@ -260,10 +260,10 @@ class E2EPullTest(unittest.TestCase):
 class E2EListTest(unittest.TestCase):
     """E2E test for the list flow."""
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_all_projects_output(self, mock_gws, mock_config, mock_root, mock_list):
         """List all projects and verify formatted output."""
         project_folders = [
@@ -290,11 +290,11 @@ class E2EListTest(unittest.TestCase):
         self.assertIn("1.3MB", output)
         self.assertIn("512KB", output)
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_specific_project(self, mock_gws, mock_config, mock_root, mock_find, mock_list):
         """List sessions for specific project."""
         mock_list.return_value = [
@@ -309,10 +309,10 @@ class E2EListTest(unittest.TestCase):
         self.assertIn("-Users-woojin-home-ccrelay", output)
         self.assertIn("abc123_2026-03-22.tar.gz", output)
 
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_no_projects(self, mock_gws, mock_config, mock_root, mock_list):
         """No projects on Drive prints 'No sessions found'."""
         args = Namespace(command="list", project=None)
@@ -373,7 +373,7 @@ class E2EHelpTest(unittest.TestCase):
 class E2EErrorGwsNotAvailable(unittest.TestCase):
     """E2E tests for gws-not-available error across all commands."""
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_push_gws_not_available(self, mock_gws):
         """push: gws not available prints consistent error and exits."""
         args = Namespace(command="push", project=None)
@@ -386,7 +386,7 @@ class E2EErrorGwsNotAvailable(unittest.TestCase):
         self.assertIn("brew install googleworkspace-cli", err)
         self.assertIn("gws auth setup --login", err)
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_pull_gws_not_available(self, mock_gws):
         """pull: gws not available prints consistent error and exits."""
         args = Namespace(command="pull", project=None)
@@ -399,7 +399,7 @@ class E2EErrorGwsNotAvailable(unittest.TestCase):
         self.assertIn("brew install googleworkspace-cli", err)
         self.assertIn("gws auth setup --login", err)
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_list_gws_not_available(self, mock_gws):
         """list: gws not available prints consistent error and exits."""
         args = Namespace(command="list", project=None)
@@ -437,50 +437,50 @@ class E2EErrorInvalidSelection(unittest.TestCase):
             },
         ]
 
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="abc")
     def test_push_non_numeric_input(self, mock_input, mock_gws):
         """push: non-numeric input prints error with the invalid value."""
         args = Namespace(command="push", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions", return_value=self._mock_sessions()), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions", return_value=self._mock_sessions()), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_push(args)
         self.assertIn("'abc' is not a valid number", mock_stderr.getvalue())
 
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="99")
     def test_push_out_of_range(self, mock_input, mock_gws):
         """push: out-of-range number prints descriptive error."""
         args = Namespace(command="push", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions", return_value=self._mock_sessions()), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions", return_value=self._mock_sessions()), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_push(args)
         self.assertIn("between 1 and 1", mock_stderr.getvalue())
 
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="0")
     def test_push_zero_input(self, mock_input, mock_gws):
         """push: zero is out of range (1-indexed)."""
         args = Namespace(command="push", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions", return_value=self._mock_sessions()), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions", return_value=self._mock_sessions()), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_push(args)
         self.assertIn("between 1 and 1", mock_stderr.getvalue())
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="xyz")
     def test_pull_non_numeric_input(self, mock_input, mock_gws, mock_config,
                                      mock_root, mock_find, mock_list):
@@ -489,17 +489,17 @@ class E2EErrorInvalidSelection(unittest.TestCase):
             {"id": "f1", "name": "ses_2026-03-22.tar.gz", "size": "1024", "modifiedTime": "2026-03-22T10:00:00Z"},
         ]
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_pull(args)
         self.assertIn("'xyz' is not a valid number", mock_stderr.getvalue())
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="99")
     def test_pull_out_of_range(self, mock_input, mock_gws, mock_config,
                                 mock_root, mock_find, mock_list):
@@ -508,17 +508,17 @@ class E2EErrorInvalidSelection(unittest.TestCase):
             {"id": "f1", "name": "ses_2026-03-22.tar.gz", "size": "1024", "modifiedTime": "2026-03-22T10:00:00Z"},
         ]
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_pull(args)
         self.assertIn("between 1 and 1", mock_stderr.getvalue())
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="-1")
     def test_pull_negative_input(self, mock_input, mock_gws, mock_config,
                                   mock_root, mock_find, mock_list):
@@ -527,7 +527,7 @@ class E2EErrorInvalidSelection(unittest.TestCase):
             {"id": "f1", "name": "ses_2026-03-22.tar.gz", "size": "1024", "modifiedTime": "2026-03-22T10:00:00Z"},
         ]
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             cmd_pull(args)
@@ -548,9 +548,9 @@ class E2EErrorDriveFailure(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
-    @patch("ccrelay.ensure_drive_root", side_effect=RuntimeError("network timeout"))
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.ensure_drive_root", side_effect=RuntimeError("network timeout"))
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     @patch("builtins.input", return_value="1")
     def test_push_drive_error(self, mock_input, mock_gws, mock_config, mock_root):
         """push: Drive RuntimeError is caught and printed."""
@@ -559,10 +559,10 @@ class E2EErrorDriveFailure(unittest.TestCase):
             f.write("fake tar")
 
         args = Namespace(command="push", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
-             patch("ccrelay.DEFAULT_CLAUDE_DIR", self.claude_dir), \
-             patch("ccrelay.list_local_sessions") as mock_scan, \
-             patch("ccrelay.bundle_session", return_value=tar_path), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", self.claude_dir), \
+             patch("ccrelay.cli.list_local_sessions") as mock_scan, \
+             patch("ccrelay.cli.bundle_session", return_value=tar_path), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr, \
              patch("sys.stdout", new_callable=StringIO):
             mock_scan.return_value = [
@@ -578,22 +578,22 @@ class E2EErrorDriveFailure(unittest.TestCase):
         self.assertIn("Drive operation failed", mock_stderr.getvalue())
         self.assertIn("network timeout", mock_stderr.getvalue())
 
-    @patch("ccrelay.ensure_drive_root", side_effect=RuntimeError("auth expired"))
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.ensure_drive_root", side_effect=RuntimeError("auth expired"))
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_pull_drive_error(self, mock_gws, mock_config, mock_root):
         """pull: Drive RuntimeError is caught and printed."""
         args = Namespace(command="pull", project=None)
-        with patch("ccrelay.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
+        with patch("ccrelay.utils.os.getcwd", return_value="/Users/woojin/home/ccrelay"), \
              patch("sys.stderr", new_callable=StringIO) as mock_stderr:
             with self.assertRaises(SystemExit):
                 cmd_pull(args)
         self.assertIn("Drive operation failed", mock_stderr.getvalue())
         self.assertIn("auth expired", mock_stderr.getvalue())
 
-    @patch("ccrelay.ensure_drive_root", side_effect=RuntimeError("quota exceeded"))
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.ensure_drive_root", side_effect=RuntimeError("quota exceeded"))
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_drive_error(self, mock_gws, mock_config, mock_root):
         """list: Drive RuntimeError is caught and printed."""
         args = Namespace(command="list", project=None)
@@ -607,9 +607,9 @@ class E2EErrorDriveFailure(unittest.TestCase):
 class E2EMainDispatch(unittest.TestCase):
     """E2E tests verifying main() dispatches correctly via sys.argv."""
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
-    @patch("ccrelay.list_local_sessions", return_value=[])
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.list_local_sessions", return_value=[])
     def test_main_push(self, mock_list, mock_resolve, mock_gws):
         """main() with 'push' arg dispatches to cmd_push."""
         with patch("sys.argv", ["ccrelay", "push"]):
@@ -617,11 +617,11 @@ class E2EMainDispatch(unittest.TestCase):
                 main()
         self.assertIn("No local sessions found", mock_stdout.getvalue())
 
-    @patch("ccrelay.check_gws_available", return_value=True)
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
     def test_main_list_no_sessions(self, mock_resolve, mock_list, mock_config, mock_root, mock_gws):
         """main() with 'list' dispatches to cmd_list."""
         with patch("sys.argv", ["ccrelay", "list"]):

@@ -21,7 +21,7 @@ class TestLoadConfig(unittest.TestCase):
             expected = {"drive_folder_id": "abc123", "extra": "value"}
             config_file.write_text(json.dumps(expected))
 
-            with patch("ccrelay.CONFIG_FILE", config_file):
+            with patch("ccrelay.config.CONFIG_FILE", config_file):
                 result = ccrelay.load_config()
 
             self.assertEqual(result, expected)
@@ -31,7 +31,7 @@ class TestLoadConfig(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / "nonexistent" / "config.json"
 
-            with patch("ccrelay.CONFIG_FILE", config_file):
+            with patch("ccrelay.config.CONFIG_FILE", config_file):
                 result = ccrelay.load_config()
 
             self.assertEqual(result, {})
@@ -46,8 +46,8 @@ class TestSaveConfig(unittest.TestCase):
             config_dir = Path(tmpdir) / "new_dir"
             config_file = config_dir / "config.json"
 
-            with patch("ccrelay.CONFIG_DIR", config_dir), \
-                 patch("ccrelay.CONFIG_FILE", config_file):
+            with patch("ccrelay.config.CONFIG_DIR", config_dir), \
+                 patch("ccrelay.config.CONFIG_FILE", config_file):
                 ccrelay.save_config({"drive_folder_id": "folder123"})
 
             self.assertTrue(config_file.exists())
@@ -61,8 +61,8 @@ class TestSaveConfig(unittest.TestCase):
             config_file = config_dir / "config.json"
             config_file.write_text(json.dumps({"old": "data"}))
 
-            with patch("ccrelay.CONFIG_DIR", config_dir), \
-                 patch("ccrelay.CONFIG_FILE", config_file):
+            with patch("ccrelay.config.CONFIG_DIR", config_dir), \
+                 patch("ccrelay.config.CONFIG_FILE", config_file):
                 ccrelay.save_config({"drive_folder_id": "new_id"})
 
             data = json.loads(config_file.read_text())
@@ -72,8 +72,8 @@ class TestSaveConfig(unittest.TestCase):
 class TestEnsureDriveRoot(unittest.TestCase):
     """Test ensure_drive_root function."""
 
-    @patch("ccrelay.save_config")
-    @patch("ccrelay.drive_find_folder")
+    @patch("ccrelay.config.save_config")
+    @patch("ccrelay.config.drive_find_folder")
     def test_config_has_valid_folder_id(self, mock_find, mock_save):
         """When config has drive_folder_id and folder exists, return it without creating."""
         mock_find.return_value = "existing_id"
@@ -87,8 +87,8 @@ class TestEnsureDriveRoot(unittest.TestCase):
         # Should not save since config already had the id
         # (it may or may not save; the key point is it returns the right id)
 
-    @patch("ccrelay.save_config")
-    @patch("ccrelay.drive_find_folder")
+    @patch("ccrelay.config.save_config")
+    @patch("ccrelay.config.drive_find_folder")
     def test_config_empty_finds_existing_folder(self, mock_find, mock_save):
         """When config is empty but folder exists on Drive, find and save it."""
         mock_find.return_value = "found_id"
@@ -102,9 +102,9 @@ class TestEnsureDriveRoot(unittest.TestCase):
         saved_config = mock_save.call_args[0][0]
         self.assertEqual(saved_config["drive_folder_id"], "found_id")
 
-    @patch("ccrelay.save_config")
-    @patch("ccrelay.drive_create_folder")
-    @patch("ccrelay.drive_find_folder")
+    @patch("ccrelay.config.save_config")
+    @patch("ccrelay.config.drive_create_folder")
+    @patch("ccrelay.config.drive_find_folder")
     def test_config_empty_folder_not_found_creates_new(self, mock_find, mock_create, mock_save):
         """When config is empty and folder doesn't exist, create it."""
         mock_find.return_value = None
@@ -120,8 +120,8 @@ class TestEnsureDriveRoot(unittest.TestCase):
         saved_config = mock_save.call_args[0][0]
         self.assertEqual(saved_config["drive_folder_id"], "new_folder_id")
 
-    @patch("ccrelay.save_config")
-    @patch("ccrelay.drive_find_folder")
+    @patch("ccrelay.config.save_config")
+    @patch("ccrelay.config.drive_find_folder")
     def test_config_has_stale_folder_id_finds_existing(self, mock_find, mock_save):
         """When config has folder_id but Drive search finds a different one, use the found one."""
         # drive_find_folder returns a different id (folder was recreated)
@@ -132,9 +132,9 @@ class TestEnsureDriveRoot(unittest.TestCase):
 
         self.assertEqual(result, "different_id")
 
-    @patch("ccrelay.save_config")
-    @patch("ccrelay.drive_create_folder")
-    @patch("ccrelay.drive_find_folder")
+    @patch("ccrelay.config.save_config")
+    @patch("ccrelay.config.drive_create_folder")
+    @patch("ccrelay.config.drive_find_folder")
     def test_config_has_stale_id_folder_gone_creates_new(self, mock_find, mock_create, mock_save):
         """When config has folder_id but folder is gone from Drive, create new one."""
         mock_find.return_value = None
@@ -154,17 +154,17 @@ class TestCmdList(unittest.TestCase):
         """Create an args namespace mimicking argparse output."""
         return argparse.Namespace(command="list", project=project)
 
-    @patch("ccrelay.check_gws_available", return_value=False)
+    @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available(self, mock_check):
         """When gws is not available, print error and exit."""
         args = self._make_args()
         with self.assertRaises(SystemExit):
             ccrelay.cmd_list(args)
 
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_no_sessions_found(self, mock_check, mock_load, mock_ensure, mock_list):
         """When no project folders exist, print 'No sessions found on Drive.'"""
         args = self._make_args()
@@ -175,10 +175,10 @@ class TestCmdList(unittest.TestCase):
 
         self.assertIn("No sessions found on Drive.", mock_stdout.getvalue())
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_all_projects(self, mock_check, mock_load, mock_ensure, mock_list):
         """Without --project, list all project folders and their sessions."""
         # First call: list project folders under root
@@ -207,11 +207,11 @@ class TestCmdList(unittest.TestCase):
         self.assertIn("2a671b32-xxxx_2026-03-22.tar.gz", output)
         self.assertIn("f8a1c3e9-xxxx_2026-03-21.tar.gz", output)
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.drive_find_folder", return_value="proj1_id")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj1_id")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_specific_project(self, mock_check, mock_load, mock_ensure, mock_find, mock_list):
         """With --project, list sessions for that specific project only."""
         sessions = [
@@ -228,11 +228,11 @@ class TestCmdList(unittest.TestCase):
         self.assertIn("-Users-woojin-home-ccrelay", output)
         self.assertIn("2a671b32-xxxx_2026-03-22.tar.gz", output)
 
-    @patch("ccrelay.drive_list_files", return_value=[])
-    @patch("ccrelay.drive_find_folder", return_value=None)
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files", return_value=[])
+    @patch("ccrelay.cli.drive_find_folder", return_value=None)
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_specific_project_not_found(self, mock_check, mock_load, mock_ensure, mock_find, mock_list):
         """With --project that doesn't exist on Drive, print 'No sessions found'."""
         args = self._make_args(project="-Users-woojin-home-nonexist")
@@ -242,10 +242,10 @@ class TestCmdList(unittest.TestCase):
 
         self.assertIn("No sessions found on Drive.", mock_stdout.getvalue())
 
-    @patch("ccrelay.drive_list_files")
-    @patch("ccrelay.ensure_drive_root", return_value="root_id")
-    @patch("ccrelay.load_config", return_value={})
-    @patch("ccrelay.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
     def test_list_projects_with_no_sessions(self, mock_check, mock_load, mock_ensure, mock_list):
         """Project folders exist but have no session files inside."""
         project_folders = [
