@@ -88,13 +88,22 @@ ccrelay list --project cclanes
 ### Session Picker (push)
 
 ```
-Project: ccrelay (-Users-woojin-home-ccrelay)
-Sessions:
-  1. 2a671b32-... (2026-03-22 01:43, 692KB)
-  2. f8a1c3e9-... (2026-03-21 18:20, 1.2MB)
+Sessions for -Users-woojin-home-cclanes:
 
-Select number:
+  [1] 36900364-...
+      "내 깃 잘 연결 되어있는지 점검."
+      23.8 KB  |  2026-03-21 01:41:55
+  [2] 9f2fc8f2-...
+      "이슈 16 진행"
+      3849.3 KB  |  2026-03-20 16:09:08
+
+Select session number to push:
 ```
+
+Session labels use a 3-tier fallback:
+1. `custom-title` from JSONL (set via `claude --name`)
+2. First user message text
+3. UUID only (if neither available)
 
 Simple numbered selection. Interactive TUI deferred to skill phase.
 
@@ -184,6 +193,11 @@ If same UUID file exists on Drive, update without prompt (push = I'm uploading t
 - `gws` not authenticated -> print `gws auth setup --login` instructions
 - Network failure -> print error from gws, suggest retry
 - No sessions found -> clear message
+
+## Known Issues
+
+- `gws` CLI restricts `--upload` and `--output` paths to current working directory.
+  Workaround: pass relative filename + `cwd` parameter to `subprocess.run`.
 
 ## Future (Out of Scope)
 

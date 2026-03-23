@@ -66,6 +66,25 @@ claude --resume <session-uuid>
 
 Sessions are matched by UUID — re-pushing updates the existing file.
 
+### Session Labels
+
+The session picker shows human-readable labels with a 3-tier fallback:
+
+1. **custom-title** — set via `claude --name "description"` at session start
+2. **First user message** — extracted from the JSONL file
+3. **UUID only** — if neither is available
+
+```
+Sessions for -Users-woojin-home-cclanes:
+
+  [1] 36900364-...
+      "내 깃 잘 연결 되어있는지 점검."
+      23.8 KB  |  2026-03-21 01:41:55
+  [2] 9f2fc8f2-...
+      "이슈 16 진행"
+      3849.3 KB  |  2026-03-20 16:09:08
+```
+
 ## Config
 
 Stored at `~/.config/ccrelay/config.json`:
@@ -84,4 +103,4 @@ Auto-created on first run.
 python3 -m unittest discover -v
 ```
 
-102 tests (unit + e2e).
+108 tests (unit + e2e).
