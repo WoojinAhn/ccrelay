@@ -1,6 +1,7 @@
 """CLI entry point and command handlers."""
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -98,33 +99,56 @@ def cmd_push(args):
         sys.exit(1)
 
     sessions = list_local_sessions(project_path)
+
+    # --json only: output and exit
+    if args.json and not args.session:
+        output = [
+            {
+                "uuid": s["uuid"],
+                "label": s.get("label"),
+                "size": s["size"],
+                "mtime": s["mtime"].isoformat(),
+            }
+            for s in sessions
+        ]
+        print(json.dumps(output, ensure_ascii=False))
+        return
+
     if not sessions:
         print(f"No local sessions found for project: {project_path}")
         return
 
-    print(f"Sessions for {project_path}:\n")
-    for i, s in enumerate(sessions, 1):
-        size_kb = s["size"] / 1024
-        mtime_str = s["mtime"].strftime("%Y-%m-%d %H:%M:%S")
-        label = s.get("label")
-        print(f"  [{i}] {s['uuid']}")
-        if label:
-            print(f"      \"{label}\"")
-        print(f"      {size_kb:.1f} KB  |  {mtime_str}")
+    # --session: skip picker
+    if args.session:
+        selected = next((s for s in sessions if s["uuid"] == args.session), None)
+        if not selected:
+            print(f"Error: Session '{args.session}' not found.", file=sys.stderr)
+            sys.exit(1)
+        uuid = selected["uuid"]
+    else:
+        print(f"Sessions for {project_path}:\n")
+        for i, s in enumerate(sessions, 1):
+            size_kb = s["size"] / 1024
+            mtime_str = s["mtime"].strftime("%Y-%m-%d %H:%M:%S")
+            label = s.get("label")
+            print(f"  [{i}] {s['uuid']}")
+            if label:
+                print(f"      \"{label}\"")
+            print(f"      {size_kb:.1f} KB  |  {mtime_str}")
 
-    print()
-    choice = input("Select session number to push: ")
-    try:
-        idx = int(choice) - 1
-        if idx < 0 or idx >= len(sessions):
-            print(f"Error: Please enter a number between 1 and {len(sessions)}.", file=sys.stderr)
+        print()
+        choice = input("Select session number to push: ")
+        try:
+            idx = int(choice) - 1
+            if idx < 0 or idx >= len(sessions):
+                print(f"Error: Please enter a number between 1 and {len(sessions)}.", file=sys.stderr)
+                return
+        except ValueError:
+            print(f"Error: '{choice}' is not a valid number.", file=sys.stderr)
             return
-    except ValueError:
-        print(f"Error: '{choice}' is not a valid number.", file=sys.stderr)
-        return
 
-    selected = sessions[idx]
-    uuid = selected["uuid"]
+        selected = sessions[idx]
+        uuid = selected["uuid"]
 
     tar_path = bundle_session(project_path, uuid)
     tar_name = os.path.basename(tar_path)
@@ -195,28 +219,51 @@ def cmd_pull(args):
         print("No sessions found on Drive for this project.")
         return
 
-    print(f"\nSessions for {project_path}:\n")
-    for i, f_info in enumerate(files, 1):
-        size = f_info.get("size", "?")
-        modified = f_info.get("modifiedTime", "?")
-        print(f"  [{i}] {f_info['name']}  ({size} bytes, modified: {modified})")
-    print()
-
-    selection = input("Select session number (or 'q' to cancel): ").strip()
-    if selection.lower() == "q":
-        print("Cancelled.")
+    # --json only: output Drive session list and exit
+    if args.json and not args.session:
+        output = [
+            {
+                "id": f["id"],
+                "name": f["name"],
+                "uuid": f["name"].split("_")[0],
+                "size": f.get("size", "0"),
+                "modifiedTime": f.get("modifiedTime", ""),
+            }
+            for f in files
+        ]
+        print(json.dumps(output, ensure_ascii=False))
         return
 
-    try:
-        idx = int(selection) - 1
-        if idx < 0 or idx >= len(files):
-            print(f"Error: Please enter a number between 1 and {len(files)}.", file=sys.stderr)
+    # --session: skip picker, match by UUID prefix
+    if args.session:
+        selected = next((f for f in files if f["name"].startswith(args.session)), None)
+        if not selected:
+            print(f"Error: Session '{args.session}' not found on Drive.", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print(f"\nSessions for {project_path}:\n")
+        for i, f_info in enumerate(files, 1):
+            size = f_info.get("size", "?")
+            modified = f_info.get("modifiedTime", "?")
+            print(f"  [{i}] {f_info['name']}  ({size} bytes, modified: {modified})")
+        print()
+
+        selection = input("Select session number (or 'q' to cancel): ").strip()
+        if selection.lower() == "q":
+            print("Cancelled.")
             return
-    except ValueError:
-        print(f"Error: '{selection}' is not a valid number.", file=sys.stderr)
-        return
 
-    selected = files[idx]
+        try:
+            idx = int(selection) - 1
+            if idx < 0 or idx >= len(files):
+                print(f"Error: Please enter a number between 1 and {len(files)}.", file=sys.stderr)
+                return
+        except ValueError:
+            print(f"Error: '{selection}' is not a valid number.", file=sys.stderr)
+            return
+
+        selected = files[idx]
+
     file_id = selected["id"]
     file_name = selected["name"]
     drive_modified_time = selected.get("modifiedTime", "")
@@ -272,6 +319,22 @@ def cmd_list(args):
         sys.exit(1)
 
     try:
+        if args.json:
+            result = []
+            if args.project:
+                project_folder_id = drive_find_folder(args.project, root_id)
+                if project_folder_id:
+                    sessions = drive_list_files(project_folder_id)
+                    result.append({"project": args.project, "sessions": sessions})
+            else:
+                folders = drive_list_files(root_id)
+                for f in folders:
+                    if f.get("mimeType") == "application/vnd.google-apps.folder":
+                        sessions = drive_list_files(f["id"])
+                        result.append({"project": f["name"], "sessions": sessions})
+            print(json.dumps(result, ensure_ascii=False))
+            return
+
         if args.project:
             project_folder_id = drive_find_folder(args.project, root_id)
             if not project_folder_id:

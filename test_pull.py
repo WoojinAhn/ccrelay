@@ -1,5 +1,6 @@
 """Tests for ccrelay pull command: restore_session, create_session_index, project_path_to_cwd, cmd_pull."""
 
+import io
 import json
 import os
 import shutil
@@ -314,6 +315,66 @@ class TestCmdPull(unittest.TestCase):
         mock_index.assert_called_once()
         # input should only be called once (for selection, not for overwrite confirmation)
         mock_input.assert_called_once()
+
+
+class TestCmdPullJson(unittest.TestCase):
+    def _make_args(self, project=None, json_flag=False, session=None):
+        return Namespace(command="pull", project=project, json=json_flag, session=session)
+
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder")
+    @patch("ccrelay.cli.drive_list_files")
+    def test_json_outputs_drive_list(self, mock_list, mock_find, mock_config,
+                                      mock_root, mock_resolve, mock_check):
+        mock_list.return_value = [
+            {"id": "f1", "name": "abc-123_2026-03-22.tar.gz",
+             "size": "820898", "modifiedTime": "2026-03-22T15:55:47.021Z"},
+        ]
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            cmd_pull(self._make_args(json_flag=True))
+            output = json.loads(mock_out.getvalue())
+        self.assertEqual(len(output), 1)
+        self.assertEqual(output[0]["uuid"], "abc-123")
+        self.assertEqual(output[0]["id"], "f1")
+
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder")
+    @patch("ccrelay.cli.drive_list_files")
+    @patch("ccrelay.cli.drive_download")
+    @patch("ccrelay.cli.restore_session", return_value="abc-123")
+    @patch("ccrelay.cli.create_session_index")
+    def test_session_flag_skips_picker(self, mock_index, mock_restore,
+                                        mock_download, mock_list, mock_find,
+                                        mock_config, mock_root, mock_resolve, mock_check):
+        mock_list.return_value = [
+            {"id": "f1", "name": "abc-123_2026-03-22.tar.gz",
+             "size": "820898", "modifiedTime": "2026-03-22T15:55:47.021Z"},
+        ]
+        with patch("builtins.print"), \
+             patch("ccrelay.cli.DEFAULT_CLAUDE_DIR", Path(tempfile.mkdtemp())):
+            cmd_pull(self._make_args(session="abc-123"))
+        mock_download.assert_called_once()
+
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.resolve_project_path", return_value="-Users-woojin-home-ccrelay")
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_123")
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.drive_find_folder", return_value="proj_folder")
+    @patch("ccrelay.cli.drive_list_files")
+    def test_session_not_found_exits(self, mock_list, mock_find, mock_config,
+                                      mock_root, mock_resolve, mock_check):
+        mock_list.return_value = [
+            {"id": "f1", "name": "xyz-999_2026-03-22.tar.gz",
+             "size": "100", "modifiedTime": "2026-03-22T00:00:00Z"},
+        ]
+        with self.assertRaises(SystemExit):
+            cmd_pull(self._make_args(session="abc-123"))
 
 
 if __name__ == "__main__":

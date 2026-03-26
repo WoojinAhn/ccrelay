@@ -1,6 +1,7 @@
 """Tests for config management (load_config, save_config, ensure_drive_root) and cmd_list."""
 
 import argparse
+import io
 import json
 import os
 import tempfile
@@ -261,6 +262,26 @@ class TestCmdList(unittest.TestCase):
         output = mock_stdout.getvalue()
         # Should show the project but indicate no sessions
         self.assertIn("-Users-woojin-home-ccrelay", output)
+
+
+class TestCmdListJson(unittest.TestCase):
+    def _make_args(self, project=None, json_flag=False):
+        return argparse.Namespace(command="list", project=project, json=json_flag)
+
+    @patch("ccrelay.cli.check_gws_available", return_value=True)
+    @patch("ccrelay.cli.load_config", return_value={})
+    @patch("ccrelay.cli.ensure_drive_root", return_value="root_id")
+    @patch("ccrelay.cli.drive_list_files")
+    def test_json_all_projects(self, mock_list, mock_root, mock_config, mock_check):
+        mock_list.side_effect = [
+            [{"id": "f1", "name": "proj1", "mimeType": "application/vnd.google-apps.folder"}],
+            [{"id": "s1", "name": "abc_2026.tar.gz", "size": "100", "modifiedTime": "2026-03-22T00:00:00Z"}],
+        ]
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_out:
+            ccrelay.cmd_list(self._make_args(json_flag=True))
+            output = json.loads(mock_out.getvalue())
+        self.assertEqual(len(output), 1)
+        self.assertEqual(output[0]["project"], "proj1")
 
 
 if __name__ == "__main__":
