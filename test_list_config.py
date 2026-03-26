@@ -152,7 +152,7 @@ class TestCmdList(unittest.TestCase):
 
     def _make_args(self, project=None):
         """Create an args namespace mimicking argparse output."""
-        return argparse.Namespace(command="list", project=project)
+        return argparse.Namespace(command="list", project=project, json=False)
 
     @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available(self, mock_check):

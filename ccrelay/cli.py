@@ -56,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
     for name, help_text in help_texts.items():
         sub = subparsers.add_parser(name, help=help_text)
         sub.add_argument("--project", default=None, help=project_help)
+        sub.add_argument("--json", action="store_true", default=False,
+                         help="Output machine-readable JSON")
+        if name in ("push", "pull"):
+            sub.add_argument("--session", default=None,
+                             help="Session UUID to use (skip interactive picker)")
 
     return parser
 

@@ -6,6 +6,7 @@ import shutil
 import tarfile
 import tempfile
 import unittest
+from argparse import Namespace
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -162,9 +163,7 @@ class TestCmdPull(unittest.TestCase):
         shutil.rmtree(self.tmpdir)
 
     def _make_args(self, project=None):
-        args = MagicMock()
-        args.project = project
-        return args
+        return Namespace(command="pull", project=project, json=False, session=None)
 
     @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available(self, mock_gws):

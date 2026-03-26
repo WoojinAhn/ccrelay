@@ -266,7 +266,7 @@ class TestCmdPush(unittest.TestCase):
     """Tests for cmd_push() command."""
 
     def _make_args(self, project=None):
-        return Namespace(command="push", project=project)
+        return Namespace(command="push", project=project, json=False, session=None)
 
     @patch("ccrelay.cli.check_gws_available", return_value=False)
     def test_gws_not_available_exits(self, mock_check):

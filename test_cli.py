@@ -147,5 +147,42 @@ class TestMain(unittest.TestCase):
                 mock_list.assert_called_once()
 
 
+class TestNewFlags(unittest.TestCase):
+    def test_push_json_flag(self):
+        parser = build_parser()
+        args = parser.parse_args(["push", "--json"])
+        self.assertTrue(args.json)
+
+    def test_push_session_flag(self):
+        parser = build_parser()
+        args = parser.parse_args(["push", "--session", "abc-123"])
+        self.assertEqual(args.session, "abc-123")
+
+    def test_pull_json_flag(self):
+        parser = build_parser()
+        args = parser.parse_args(["pull", "--json"])
+        self.assertTrue(args.json)
+
+    def test_pull_session_flag(self):
+        parser = build_parser()
+        args = parser.parse_args(["pull", "--session", "abc-123"])
+        self.assertEqual(args.session, "abc-123")
+
+    def test_list_json_flag(self):
+        parser = build_parser()
+        args = parser.parse_args(["list", "--json"])
+        self.assertTrue(args.json)
+
+    def test_default_json_false(self):
+        parser = build_parser()
+        args = parser.parse_args(["push"])
+        self.assertFalse(args.json)
+
+    def test_default_session_none(self):
+        parser = build_parser()
+        args = parser.parse_args(["push"])
+        self.assertIsNone(args.session)
+
+
 if __name__ == "__main__":
     unittest.main()
