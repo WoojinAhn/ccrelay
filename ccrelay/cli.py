@@ -107,7 +107,7 @@ def cmd_push(args):
                 "uuid": s["uuid"],
                 "label": s.get("label"),
                 "size": s["size"],
-                "mtime": s["mtime"].isoformat(),
+                "mtime": s["mtime"].strftime("%Y-%m-%d %H:%M"),
             }
             for s in sessions
         ]
@@ -230,7 +230,7 @@ def cmd_pull(args):
                 "uuid": f["name"].split("_")[0],
                 "label": f.get("description"),
                 "size": f.get("size", "0"),
-                "modifiedTime": f.get("modifiedTime", ""),
+                "modifiedTime": format_time(f.get("modifiedTime", "")),
             }
             for f in files
         ]

@@ -19,7 +19,7 @@ python3 /Users/woojin/home/ccrelay/ccrelay.py push --json <remaining_flags> 2>&1
 
 3. Take the first 4 entries from the array (already sorted most recent first). Use the AskUserQuestion tool:
    - Label: the `label` field if present, otherwise first 12 chars of `uuid`
-   - Description: human-readable size + mtime (convert to user's local timezone if needed)
+   - Description: human-readable size + mtime
 
 4. Push the selected session:
 ```bash
@@ -39,7 +39,7 @@ python3 /Users/woojin/home/ccrelay/ccrelay.py pull --json <remaining_flags> 2>&1
 
 3. Take the first 4 entries. Use AskUserQuestion:
    - Label: `label` field if present, otherwise first 12 chars of `uuid`
-   - Description: human-readable size + modifiedTime (convert UTC to user's local timezone)
+   - Description: human-readable size + modifiedTime
 
 4. Pull the selected session:
 ```bash
