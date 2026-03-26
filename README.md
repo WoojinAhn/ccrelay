@@ -85,6 +85,28 @@ Sessions for -Users-woojin-home-cclanes:
       3849.3 KB  |  2026-03-20 16:09:08
 ```
 
+## Claude Code Slash Command (`/relay`)
+
+ccrelay can be used as a Claude Code slash command for a conversational experience.
+
+### Install slash command
+
+```bash
+# From the ccrelay repo directory:
+./install-command.sh
+```
+
+This copies `commands/relay.md` to `~/.claude/commands/relay.md`.
+
+### Usage in Claude Code
+
+```
+/relay push                    # Select and push a session
+/relay pull                    # Select and pull a session, auto-resume
+/relay list                    # List sessions on Drive
+/relay push --project cclanes  # Push from a specific project
+```
+
 ## Config
 
 Stored at `~/.config/ccrelay/config.json`:
@@ -103,4 +125,4 @@ Auto-created on first run.
 python3 -m unittest discover -v
 ```
 
-120 tests (unit + e2e).
+135 tests (unit + e2e).
