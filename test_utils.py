@@ -32,12 +32,21 @@ class TestFormatTime(unittest.TestCase):
     """Tests for format_time()."""
 
     def test_iso_with_z(self):
+        """UTC input should be converted to local timezone."""
+        from datetime import datetime, timezone
         result = format_time("2026-03-22T15:30:00Z")
-        self.assertEqual(result, "2026-03-22 15:30")
+        # Verify by computing expected local time
+        utc_dt = datetime(2026, 3, 22, 15, 30, tzinfo=timezone.utc)
+        expected = utc_dt.astimezone().strftime("%Y-%m-%d %H:%M")
+        self.assertEqual(result, expected)
 
     def test_iso_with_offset(self):
+        """Offset input should be converted to local timezone."""
+        from datetime import datetime, timezone
         result = format_time("2026-03-22T15:30:00+00:00")
-        self.assertEqual(result, "2026-03-22 15:30")
+        utc_dt = datetime(2026, 3, 22, 15, 30, tzinfo=timezone.utc)
+        expected = utc_dt.astimezone().strftime("%Y-%m-%d %H:%M")
+        self.assertEqual(result, expected)
 
     def test_empty_string_returns_unknown(self):
         self.assertEqual(format_time(""), "unknown")

@@ -38,7 +38,7 @@ python3 /Users/woojin/home/ccrelay/ccrelay.py pull --json <remaining_flags> 2>&1
 2. If the JSON array is empty, tell the user "No sessions found on Drive." and stop.
 
 3. Take the first 4 entries. Use AskUserQuestion:
-   - Label: first 12 chars of `uuid`
+   - Label: `label` field if present, otherwise first 12 chars of `uuid`
    - Description: human-readable size + modifiedTime
 
 4. Pull the selected session:

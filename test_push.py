@@ -321,6 +321,7 @@ class TestCmdPush(unittest.TestCase):
                 "path": "/fake/.claude/projects/proj/abc-123.jsonl",
                 "size": 1024,
                 "mtime": datetime(2026, 3, 22, 10, 0, 0),
+                "label": "test label",
             },
         ]
 
@@ -338,6 +339,7 @@ class TestCmdPush(unittest.TestCase):
             "/tmp/abc-123_2026-03-22.tar.gz",
             "abc-123_2026-03-22.tar.gz",
             "proj_folder_456",
+            description="test label",
         )
         mock_remove.assert_called_once_with("/tmp/abc-123_2026-03-22.tar.gz")
 
@@ -371,6 +373,7 @@ class TestCmdPush(unittest.TestCase):
                 "path": "/fake/.claude/projects/proj/abc-123.jsonl",
                 "size": 1024,
                 "mtime": datetime(2026, 3, 22, 10, 0, 0),
+                "label": "test label",
             },
         ]
         mock_list_files.return_value = [
@@ -380,7 +383,7 @@ class TestCmdPush(unittest.TestCase):
         with patch("builtins.print"):
             cmd_push(self._make_args())
 
-        mock_update.assert_called_once_with("old_file_id", "/tmp/abc-123_2026-03-22.tar.gz")
+        mock_update.assert_called_once_with("old_file_id", "/tmp/abc-123_2026-03-22.tar.gz", description="test label")
         mock_remove.assert_called_once_with("/tmp/abc-123_2026-03-22.tar.gz")
 
     @patch("ccrelay.cli.check_gws_available", return_value=True)
@@ -413,6 +416,7 @@ class TestCmdPush(unittest.TestCase):
                 "path": "/fake/.claude/projects/proj/abc-123.jsonl",
                 "size": 1024,
                 "mtime": datetime(2026, 3, 22, 10, 0, 0),
+                "label": "test label",
             },
         ]
         mock_list_files.return_value = [
@@ -426,6 +430,7 @@ class TestCmdPush(unittest.TestCase):
             "/tmp/abc-123_2026-03-22.tar.gz",
             "abc-123_2026-03-22.tar.gz",
             "existing_proj_folder",
+            description="test label",
         )
 
 

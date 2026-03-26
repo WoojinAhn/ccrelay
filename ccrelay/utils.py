@@ -71,9 +71,10 @@ def format_size(size_str: str) -> str:
 
 
 def format_time(time_str: str) -> str:
-    """Format ISO time string to 'YYYY-MM-DD HH:MM'."""
+    """Format ISO time string to 'YYYY-MM-DD HH:MM' in local timezone."""
     try:
         dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
-        return dt.strftime("%Y-%m-%d %H:%M")
+        local_dt = dt.astimezone()
+        return local_dt.strftime("%Y-%m-%d %H:%M")
     except (ValueError, TypeError, AttributeError):
         return "unknown"

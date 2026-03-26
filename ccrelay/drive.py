@@ -55,34 +55,35 @@ def drive_create_folder(name: str, parent_id: str) -> str:
     return result["id"]
 
 
-def drive_upload(file_path: str, name: str, parent_id: str) -> str:
+def drive_upload(file_path: str, name: str, parent_id: str, description: str | None = None) -> str:
     """Upload a file to Drive. Returns file ID."""
     abs_path = os.path.abspath(file_path)
     file_dir = os.path.dirname(abs_path)
     file_name = os.path.basename(abs_path)
-    metadata = json.dumps({
+    metadata = {
         "name": name,
         "parents": [parent_id],
-    })
+    }
+    if description:
+        metadata["description"] = description
     result = gws_run([
         "drive", "files", "create",
-        "--json", metadata,
+        "--json", json.dumps(metadata),
         "--upload", file_name,
     ], cwd=file_dir)
     return result["id"]
 
 
-def drive_update(file_id: str, file_path: str) -> str:
+def drive_update(file_id: str, file_path: str, description: str | None = None) -> str:
     """Update an existing file on Drive. Returns file ID."""
     abs_path = os.path.abspath(file_path)
     file_dir = os.path.dirname(abs_path)
     file_name = os.path.basename(abs_path)
     params = json.dumps({"fileId": file_id})
-    result = gws_run([
-        "drive", "files", "update",
-        "--params", params,
-        "--upload", file_name,
-    ], cwd=file_dir)
+    args = ["drive", "files", "update", "--params", params, "--upload", file_name]
+    if description:
+        args.extend(["--json", json.dumps({"description": description})])
+    result = gws_run(args, cwd=file_dir)
     return result["id"]
 
 
@@ -104,7 +105,7 @@ def drive_list_files(parent_id: str) -> list[dict]:
     params = json.dumps({
         "q": f'"{parent_id}" in parents',
         "pageSize": 100,
-        "fields": "files(id,name,size,modifiedTime,mimeType)",
+        "fields": "files(id,name,size,modifiedTime,mimeType,description)",
     })
     result = gws_run(["drive", "files", "list", "--params", params])
     return result.get("files", [])

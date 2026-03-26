@@ -168,11 +168,13 @@ def cmd_push(args):
                 existing = f
                 break
 
+        label = selected.get("label")
+
         if existing:
-            drive_update(existing["id"], tar_path)
+            drive_update(existing["id"], tar_path, description=label)
             print(f"\nUpdated existing session on Drive: {tar_name}")
         else:
-            drive_upload(tar_path, tar_name, proj_folder_id)
+            drive_upload(tar_path, tar_name, proj_folder_id, description=label)
             print(f"\nUploaded session to Drive: {tar_name}")
 
     except RuntimeError as e:
@@ -226,6 +228,7 @@ def cmd_pull(args):
                 "id": f["id"],
                 "name": f["name"],
                 "uuid": f["name"].split("_")[0],
+                "label": f.get("description"),
                 "size": f.get("size", "0"),
                 "modifiedTime": f.get("modifiedTime", ""),
             }
